@@ -6,6 +6,8 @@
 //! otherwise. Refer to the IUP website for their full documentation.
 //!
 
+#![feature(core,libc,std_misc)]
+
 extern crate libc;
 extern crate "iup-sys" as sys;
 
