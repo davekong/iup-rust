@@ -1,4 +1,4 @@
-use iup_sys;
+﻿use iup_sys;
 use libc::{c_char, c_int};
 use std::{mem, ptr};
 
@@ -26,7 +26,7 @@ impl Text {
     /// lin and col starts at 1, pos starts at 0. For single line controls pos is always *col-1*.
     pub fn convert_lincol_to_pos(&self, lin: i32, col: i32) -> usize {
         unsafe {
-            let mut r: c_int = mem::uninitialized();
+            let mut r: c_int = mem::MaybeUninit::uninit().assume_init();
             iup_sys::IupTextConvertLinColToPos(self.raw(), lin, col, &mut r);
             r as usize
         }
@@ -38,7 +38,7 @@ impl Text {
     /// For single line controls lin is always 1, and col is always *pos+1*.
     pub fn convert_pos_to_lincol(&self, pos: usize) -> (i32, i32) {
         unsafe {
-            let (mut lin, mut col): (c_int, c_int) = (mem::uninitialized(), mem::uninitialized());
+            let (mut lin, mut col): (c_int, c_int) = (mem::MaybeUninit::uninit().assume_init(), mem::MaybeUninit::uninit().assume_init());
             iup_sys::IupTextConvertPosToLinCol(self.raw(), pos as c_int, &mut lin, &mut col);
             (lin as i32, col as i32)
         }

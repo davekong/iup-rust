@@ -1,4 +1,4 @@
-//! LED *(Dialog-specification language)* functionalities.
+﻿//! LED *(Dialog-specification language)* functionalities.
 //!
 //! LED is a dialog-specification language whose purpose is not to be a complete programming language,
 //! but rather to make dialog specification simpler than in C. Additionally it allows users to easily
@@ -47,7 +47,7 @@ use std::ffi::CString;
 pub fn load<P: AsRef<Path>>(path: P) -> Result<(), String> {
     let path = path.as_ref();
 
-    let str = try!(path.to_str().ok_or_else(|| "Failed to convert Path to string".to_string()));
+    let str = path.to_str().ok_or_else(|| "Failed to convert Path to string".to_string())?;
     let cstr = CString::new(str).unwrap();
 
     match unsafe { iup_sys::IupLoad(cstr.as_ptr()) } {

@@ -1,4 +1,4 @@
-//! Common operations between objects.
+﻿//! Common operations between objects.
 //!
 //! Every IUP object is so called an element and can be encapsulated in a `Handle`.
 use iup_sys;
@@ -389,7 +389,7 @@ pub trait Element : Sized + Copy + Clone {
         unsafe {
             let cname = CString::new(name.into()).unwrap();
             if self.does_attrib_exist(&cname) {
-                let mut rgb: (u8, u8, u8) = mem::uninitialized();
+                let mut rgb: (u8, u8, u8) = mem::MaybeUninit::uninit().assume_init();
                 iup_sys::IupGetRGB(self.raw(), cname.as_ptr(), &mut rgb.0, &mut rgb.1, &mut rgb.2);
                 Some(rgb)
             } else {

@@ -1,4 +1,4 @@
-
+﻿
 /// Turns a string literal into a boxed closure attribute.
 macro_rules! fbox_c_str {
     ($cb_name:expr) => {
@@ -24,12 +24,12 @@ macro_rules! set_fbox_callback {
         clear_fbox_callback!($ih, $cb_name, Callback<$($rargs),*>);
 
         let ih = $ih;
-        let fb: Box<Box<$crate::callback::Callback<$($rargs),*>>> = Box::new(Box::new($rcb));
+        let fb: Box<Box<dyn $crate::callback::Callback<$($rargs),*>>> = Box::new(Box::new($rcb));
         iup_sys::IupSetAttribute(ih, fbox_c_str!($cb_name), box_into_raw(fb) as *const _);
         if ih.is_null() {
-            iup_sys::IupSetFunction(cstr!($cb_name), transmute($clistener));
+            iup_sys::IupSetFunction(cstr!($cb_name), transmute::<_, iup_sys::Icallback>($clistener as usize));
         } else {
-            iup_sys::IupSetCallback(ih, cstr!($cb_name), transmute($clistener));
+            iup_sys::IupSetCallback(ih, cstr!($cb_name), transmute::<_, iup_sys::Icallback>($clistener as usize));
         }
 
     }}
@@ -48,13 +48,13 @@ macro_rules! clear_fbox_callback {
 
         let ih = $ih;
         let capsule_box = iup_sys::IupGetAttribute(ih, fbox_c_str!($cb_name))
-                                                as *mut Box<$crate::callback::Callback<$($rargs),*>>;
+            as *mut Box<dyn $crate::callback::Callback<$($rargs),*>>;
         if capsule_box.is_null() {
             None
         } else {
 
             // TODO when Box::from_raw gets stable use it instead of transmute here.
-            let inner_box: Box<Box<$crate::callback::Callback<$($rargs),*>>> = transmute(capsule_box);
+            let inner_box: Box<Box<dyn $crate::callback::Callback<$($rargs),*>>> = transmute(capsule_box);
 
             iup_sys::IupSetAttribute(ih, fbox_c_str!($cb_name), ptr::null());
 
@@ -74,7 +74,7 @@ macro_rules! get_fbox_callback {
     ($ih:expr, $cb_name:expr, Callback<$($rargs:ty),*>) => {{
         let fbox_ptr  = unsafe {
                         iup_sys::IupGetAttribute($ih, fbox_c_str!($cb_name))
-                                as *mut Box<$crate::callback::Callback<($($rargs),*)>>
+                as *mut Box<dyn $crate::callback::Callback<($($rargs),*)>>
         };
         assert!(fbox_ptr.is_null() == false);
         let fbox: &mut Box<_> = unsafe { &mut (*(fbox_ptr)) };
@@ -179,7 +179,7 @@ macro_rules! impl_callback {
             }
 
             fn $remove_method(&mut self)
-                                -> Option<Box<$crate::callback::Callback<(Self, $($fn_arg_ty),*)>>> {
+                              -> Option<Box<dyn $crate::callback::Callback<(Self, $($fn_arg_ty),*)>>> {
                 unsafe {
                     let old_cb = clear_fbox_callback!(self.raw(), $cb_name,
                                                       Callback<(Self, $($fn_arg_ty),*)>);
@@ -223,7 +223,7 @@ macro_rules! impl_callback {
 
             $(#[$rem_func_attr])*
             pub fn $remove_func()
-                    -> Option<Box<$crate::callback::Callback<($($fn_arg_ty),*)>>> {
+                                -> Option<Box<dyn $crate::callback::Callback<($($fn_arg_ty),*)>>> {
                 unsafe {
                     //use std::ptr;
                     let old_cb = clear_fbox_callback!(ptr::null_mut(), $cb_name,
@@ -250,10 +250,10 @@ macro_rules! drop_callback {
         use std::mem::transmute;
         use std::any::Any;
         let capsule_box = iup_sys::IupGetAttribute($ih, fbox_c_str!($cb_name))
-                                                    as *mut Box<Any>;   // HACK HACK HACK!!!!
+            as *mut Box<dyn Any>;   // HACK HACK HACK!!!!
         if !capsule_box.is_null() {
             // TODO when Box::from_raw gets stable use it instead of transmute here.
-            let inner_box: Box<Box<Any>> = transmute(capsule_box);
+            let inner_box: Box<Box<dyn Any>> = transmute(capsule_box);
             drop(inner_box);
         }
     }}
